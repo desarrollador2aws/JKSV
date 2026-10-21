@@ -296,15 +296,23 @@ void PeerState::update()
                         fslib::Directory titleDir(config::get_working_directory() / titleName);
                         if (!titleDir.is_open()) continue;
 
+                        // Read the backups first. An empty title folder (for example,
+                        // a game JKSV knows about but has never backed up) must not
+                        // appear as a selectable group in the send list.
+                        std::vector<std::string> backups;
+                        for (int b = 0; b < titleDir.get_count(); b++)
+                        {
+                            backups.push_back(titleDir.get_entry(b).get_filename());
+                        }
+                        if (backups.empty()) continue;
+
                         // Title header (non-selectable).
                         m_backup_display.push_back(titleName);
                         m_backup_map.push_back(-1);
 
-                        for (int b = 0; b < titleDir.get_count(); b++)
+                        for (const std::string &backupName : backups)
                         {
-                            const fslib::DirectoryEntry &backupEntry = titleDir.get_entry(b);
-                            std::string backupName                   = backupEntry.get_filename();
-                            int idx                                  = (int)m_backup_options.size();
+                            int idx = (int)m_backup_options.size();
                             m_backup_options.push_back(titleName + "/" + backupName);
                             m_backup_display.push_back("  " + backupName);
                             m_backup_map.push_back(idx);
